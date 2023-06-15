@@ -1,0 +1,65 @@
+version: '3'
+services:
+
+    mongodb:
+        image: mongo:4.4
+        container_name: mongo-app
+        ports:
+            - "27017:27017"
+        volumes:
+            - mongodata:/data/db
+        networks:
+            - proyecto
+
+    golangService:
+        depends_on:
+            - mongodb
+        build: .
+        image: ebany/go-app
+        container_name: go-app
+        privileged: true
+        volumes:
+            - type: bind
+              source: /proc
+              target: /proc
+        pid: host
+        environment:
+            - PORT=8080
+        ports:
+            - "8080:8080"
+        networks:
+            - proyecto
+
+    nodeService:
+        depends_on:
+            - mongodb
+        build: .
+        image: ebany/node-app
+        container_name: node-app
+        environment:
+            - PORT=8000
+        ports:
+            - "8000:8000"
+        networks:
+            - proyecto
+
+    reactService:
+        depends_on:
+            - nodeService
+            - golangService
+        build: .
+        image: ebany/react-app
+        container_name: react-app
+        environment:
+            - PORT=3000
+        ports:
+            - "3000:3000"
+        networks:
+            - proyecto
+
+volumes:
+    mongodata: {}
+
+networks:
+    proyecto:
+        driver: bridge
